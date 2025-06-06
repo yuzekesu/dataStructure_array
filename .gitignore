@@ -1,2 +1,4 @@
 *.exe
 main.c
+test.c
+test.h
