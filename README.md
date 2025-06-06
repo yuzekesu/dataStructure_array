@@ -1,1 +1,1 @@
-# dataStructure_array
+# Template for the data structure array
