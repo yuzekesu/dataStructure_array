@@ -2,7 +2,6 @@
 #include "..\header\test.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #define DATA_T struct number
 #define SIZE_T int
 
