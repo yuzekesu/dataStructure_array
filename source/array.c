@@ -1,9 +1,8 @@
 #include "..\header\array.h"
-#include "..\header\test.h"
 #include <stdlib.h>
 #include <stdio.h>
-#define DATA_T struct number
-#define SIZE_T int
+#define DATA_T void 
+#define SIZE_T long long int 
 
 struct array* initialize_array(SIZE_T size_max){
     struct array* pNewArray = malloc(sizeof(struct array));

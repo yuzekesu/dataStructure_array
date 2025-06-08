@@ -1,9 +1,7 @@
 #ifndef ARRAY_TEMPLATE_H
 #define ARRAY_TEMPLATE_H
-#include "test.h" // modify if necessary.
-#define DATA_T struct number // modify if necessary, .c file as well.
-#define SIZE_T int // modify if necessary, .c file as well.
-
+#define DATA_T void 
+#define SIZE_T long long int 
 /*
 Array that fits all data types.
 */
@@ -148,6 +146,8 @@ The function ponter "toString_pData" cannot be NULL.
 */
 void debug_array(const struct array* pArray, const char* message, char*(*toString_pData)(DATA_T* pData));
 
+#undef Array
+#undef Array_Twin
 #undef DATA_T
 #undef SIZE_T
 #undef DEFINE_TYPE_FOR_KEY_AND_DATA
