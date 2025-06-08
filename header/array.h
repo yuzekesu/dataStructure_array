@@ -1,7 +1,7 @@
 #ifndef ARRAY_TEMPLATE_H
 #define ARRAY_TEMPLATE_H
 #define DATA_T void 
-#define SIZE_T long long int 
+#define SIZE_T unsigned long long int 
 /*
 Array that fits all data types.
 */

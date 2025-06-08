@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #define DATA_T void 
-#define SIZE_T long long int 
+#define SIZE_T unsigned long long int 
 
 struct array* initialize_array(SIZE_T size_max){
     struct array* pNewArray = malloc(sizeof(struct array));
