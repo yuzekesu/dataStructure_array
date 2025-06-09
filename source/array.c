@@ -1,15 +1,8 @@
-/* #include "..\header\array.h"
-#include <stdlib.h>
-#include <stdio.h>
-#define DATA_T void 
-#define SIZE_T unsigned long long int  */
-
 #include "..\header\array.h"
-#include "..\header\test.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
-#define DATA_T struct number 
+#define DATA_T void 
 #define SIZE_T unsigned long long int 
 #define SIZE_CAP ULLONG_MAX
 
@@ -35,7 +28,7 @@ struct array* initialize_array(SIZE_T capacity){
                 pNewArray->size = 0;
                 pNewArray->capacity = capacity;
                 for (SIZE_T i = 0; i < get_capacity_array(pNewArray); i++){
-                    pNewArray->ppData[i] = NULL;
+                    pNewArray->ppData[i] = NULL; // dont touch this !!!
                 }
             }
         }
@@ -92,6 +85,38 @@ SIZE_T get_capacity_array(const struct array* pArray){
 }
 SIZE_T get_offset_last_array(const struct array* pArray){
     return get_size_array(pArray) - 1;
+}
+int put_pData_array(struct array* pArray, SIZE_T offset, const DATA_T* pData){
+    int isValid_offset = 0;
+    if (isValid_offset_array(pArray, offset)){
+        if (pArray->ppData[offset] == NULL){
+            isValid_offset = 1;
+            pArray->ppData[offset] = (DATA_T*)pData;
+        }
+    }
+    return isValid_offset;
+}
+int insert_array(struct array* pArray, const DATA_T* pData){
+    int isNotFull = 0;
+    if (get_size_array(pArray) == get_capacity_array(pArray)){
+        ;
+    }
+    else {
+        isNotFull = 1;
+        pArray->ppData[get_size_array(pArray)] = (DATA_T*)pData;
+        pArray->size++;
+    }
+    return isNotFull;
+}
+int swap_array(struct array* pArray, SIZE_T offset_1, SIZE_T offset_2){
+    int isValid_offset = 0;
+    if (isValid_offset_array(pArray, offset_1) && isValid_offset_array(pArray, offset_2)){
+        isValid_offset = 1;
+        DATA_T* pTempData = get_pData_array(pArray, offset_1);
+        pArray->ppData[offset_1] = get_pData_array(pArray, offset_2); // dont touch this !!!
+        pArray->ppData[offset_2] = pTempData;   // dont touch this !!!
+    }
+    return isValid_offset;
 }
 int copy_FORCE_array(struct array* pArray_dest, const struct array* pArray_src, const SIZE_T offset_start_dest, const SIZE_T offset_start_src, const SIZE_T size, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData)){
     int success = 1;
@@ -202,36 +227,6 @@ struct array_twin* split_array(struct array* pArray, int isDestroyParent){
         free_array(pArray, NULL);
     }
     return pTwin;
-}
-int insert_array(struct array* pArray, const DATA_T* pData){
-    int isNotFull = 0;
-    if (get_size_array(pArray) == get_capacity_array(pArray)){
-        ;
-    }
-    else {
-        isNotFull = 1;
-        pArray->ppData[get_size_array(pArray)] = (DATA_T*)pData;
-        pArray->size++;
-    }
-    return isNotFull;
-}
-int modify_array(struct array* pArray, const DATA_T* pData, SIZE_T offset){
-    int isValid_offset = 0;
-    if (isValid_offset_array(pArray, offset)){
-        isValid_offset = 1;
-        pArray->ppData[offset] = (DATA_T*)pData;
-    }
-    return isValid_offset;
-}
-int swap_array(struct array* pArray, SIZE_T offset_1, SIZE_T offset_2){
-    int isValid_offset = 0;
-    if (isValid_offset_array(pArray, offset_1) && isValid_offset_array(pArray, offset_2)){
-        isValid_offset = 1;
-        DATA_T* pTempData = get_pData_array(pArray, offset_1);
-        pArray->ppData[offset_1] = get_pData_array(pArray, offset_2);
-        pArray->ppData[offset_2] = pTempData;
-    }
-    return isValid_offset;
 }
 SIZE_T query_bruteForce_array(const struct array* pArray, const DATA_T* pData_ref, int(*isIdentical_pData)(DATA_T* pData, DATA_T* pData_ref)){
     SIZE_T offset = get_capacity_array(pArray);
@@ -453,7 +448,7 @@ void debug_array(const struct array* pArray, const char* message, char*(*toStrin
     }
     if (get_size_array(pArray) > 0){
         if (get_pData_array(pArray, get_offset_last_array(pArray)) == NULL){
-            fprintf(stderr, "[NULL], ");
+            fprintf(stderr, "[NULL]");
         }
         else {
             char* pChar_pData = toString_pData(get_pData_array(pArray, get_offset_last_array(pArray)));

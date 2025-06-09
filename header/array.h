@@ -1,12 +1,6 @@
-/* #ifndef ARRAY_TEMPLATE_H
-#define ARRAY_TEMPLATE_H
-#define DATA_T void 
-#define SIZE_T unsigned long long int  */
-
 #ifndef ARRAY_TEMPLATE_H
 #define ARRAY_TEMPLATE_H
-#include "test.h"
-#define DATA_T struct number 
+#define DATA_T void 
 #define SIZE_T unsigned long long int 
 
 /*
@@ -59,6 +53,25 @@ Does nothing if the offset is out of the range of "size".
 */
 SIZE_T get_offset_last_array(const struct array* pArray);
 /*
+Put the elements in the array. 
+Does nothing if the offset is out of the range of "size".
+Does nothing if the destination is already assigned with other value then "NULL".
+Please use "insert_array" for insert new element into the array. 
+->Return 0 upon failure [offset, overwrite].
+*/
+int put_pData_array(struct array* pArray, SIZE_T offset, const DATA_T* pData);
+/*
+Insert like stack.
+->Return 0 upon failure.
+*/
+int insert_array(struct array* pArray, const DATA_T* pData);
+/*
+Swap two elements in a array.
+Does nothing if any of the offsets are out of the range of "size".
+->Return 0 upon failure.
+*/
+int swap_array(struct array* pArray, SIZE_T offset_1, SIZE_T offset_2);
+/*
 Copy to existing array. 
 No worry about overflow & underflow.
 Deep_copies will be destroied properly.
@@ -94,23 +107,6 @@ Malloc a pointer.
 ->Return NULL uppon failure [memory], nothing happens.
 */
 struct array_twin* split_array(struct array* pArray, int isDestroyParent);
-/*
-Insert like stack.
-->Return 0 upon failure.
-*/
-int insert_array(struct array* pArray, const DATA_T* pData);
-/*
-Modify the elements in the array. 
-Does nothing if the offset is out of the range of "size".
-->Return 0 upon failure.
-*/
-int modify_array(struct array* pArray, const DATA_T* pData, SIZE_T offset);
-/*
-Swap two elements in a array.
-Does nothing if any of the offsets are out of the range of "size".
-->Return 0 upon failure.
-*/
-int swap_array(struct array* pArray, SIZE_T offset_1, SIZE_T offset_2);
 /*
 ->Return "capacity" upon failure [can not find]. 
 */
@@ -172,9 +168,6 @@ The function ponter "toString_pData" cannot be NULL.
 */
 void debug_array(const struct array* pArray, const char* message, char*(*toString_pData)(DATA_T* pData));
 
-#undef Array
-#undef Array_Twin
 #undef DATA_T
 #undef SIZE_T
-#undef DEFINE_TYPE_FOR_KEY_AND_DATA
 #endif
