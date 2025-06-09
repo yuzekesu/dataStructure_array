@@ -1,14 +1,21 @@
-#ifndef ARRAY_TEMPLATE_H
+/* #ifndef ARRAY_TEMPLATE_H
 #define ARRAY_TEMPLATE_H
 #define DATA_T void 
+#define SIZE_T unsigned long long int  */
+
+#ifndef ARRAY_TEMPLATE_H
+#define ARRAY_TEMPLATE_H
+#include "test.h"
+#define DATA_T struct number 
 #define SIZE_T unsigned long long int 
+
 /*
 Array that fits all data types.
 */
 struct array{
     DATA_T** ppData;
-    SIZE_T size_current;
-    SIZE_T size_max;
+    SIZE_T size;
+    SIZE_T capacity;
 };
 struct array_twin{
     struct array* pArray_1;
@@ -18,14 +25,39 @@ struct array_twin{
 Malloc a pointer. 
 ->Return NULL upon failure [memory].
 */
-struct array* initialize_array(SIZE_T size_max);
+struct array* initialize_array(SIZE_T capacity);
 /*
-Copy to existing array. Allow random access, use carefully.
-No worry about overflow. Underflow need to be checked by user.
-Deep_copies will be destroied properly.
-->Return 0 upon failure [memory(deepCopy), overflow].
+->Return if the array is empty or not.
 */
-int copy_force_array(struct array* pArray_dest, const struct array* pArray_src, const SIZE_T offset_start_dest, const SIZE_T offset_start_src, const SIZE_T size, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData));
+int isEmpty_array(struct array* pArray);
+/*
+->Return if the offset is witin the range of the "size" or not.
+*/
+int isValid_offset_array(struct array* pArray, SIZE_T offset);
+/*
+->Return if two array are identical in "pData" and it's order or not, the "capacity" doesn't matter.
+*/
+int isIdentical_arrays_array(const struct array* pArray_1, const struct array* pArray_2, int(*isIdentical_pData)(DATA_T* pData, DATA_T* pData_ref));
+/*
+Does nothing if the offset is out of the range of "size".
+->Return the element stores on that offset.
+*/
+DATA_T* get_pData_array(const struct array* pArray, const SIZE_T offset);
+/*
+Does nothing if the offset is out of the range of "size".
+->Return the current size of the array.
+*/
+SIZE_T get_size_array(const struct array* pArray);
+/*
+Does nothing if the offset is out of the range of "size".
+->Return the maximum capacity of the array.
+*/
+SIZE_T get_capacity_array(const struct array* pArray);
+/*
+Does nothing if the offset is out of the range of "size".
+->Return the offset of the last element in the array.
+*/
+SIZE_T get_offset_last_array(const struct array* pArray);
 /*
 Copy to existing array. 
 No worry about overflow & underflow.
@@ -38,7 +70,7 @@ Malloc and Duplicate "partial" of a existing array.
 Deep_copies will be destroied properly if Malloc failed.
 ->Return NULL upon failure [memory].
 */
-struct array* duplicate_selective_array(const struct array* pArray, SIZE_T offset_start, SIZE_T offset_end, int doInherit_size_max, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData));
+struct array* duplicate_selective_array(const struct array* pArray, SIZE_T offset_start, SIZE_T offset_end, int doInherit_capacity, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData));
 /*
 Malloc and Duplicate a existing array.
 Deep_copies will be destroied properly if Malloc failed.
@@ -63,45 +95,28 @@ Malloc a pointer.
 */
 struct array_twin* split_array(struct array* pArray, int isDestroyParent);
 /*
-->Return if the array is empty or not.
-*/
-int isEmpty_array(struct array* pArray);
-/*
-->Return if the offset is witin the range of the "size_current" or not.
-*/
-int isValid_offset_array(struct array* pArray, SIZE_T offset);
-/*
-->Return if two array are identical in "pData" and it's order or not, the "size_max" doesn't matter.
-*/
-int isIdentical_arrays_array(const struct array* pArray_1, const struct array* pArray_2, int(*isIdentical_pData)(DATA_T* pData, DATA_T* pData_ref));
-/*
 Insert like stack.
 ->Return 0 upon failure.
 */
 int insert_array(struct array* pArray, const DATA_T* pData);
 /*
 Modify the elements in the array. 
-Does nothing if the offset is out of the range of "size_current".
+Does nothing if the offset is out of the range of "size".
 ->Return 0 upon failure.
 */
 int modify_array(struct array* pArray, const DATA_T* pData, SIZE_T offset);
 /*
 Swap two elements in a array.
-Does nothing if any of the offsets are out of the range of "size_current".
+Does nothing if any of the offsets are out of the range of "size".
 ->Return 0 upon failure.
 */
 int swap_array(struct array* pArray, SIZE_T offset_1, SIZE_T offset_2);
 /*
-Does nothing if the offset is out of the range of "size_current".
-->Return the element stores on that offset.
-*/
-DATA_T* access_array(const struct array* pArray, SIZE_T offset);
-/*
-->Return "size_max" upon failure [can not find]. 
+->Return "capacity" upon failure [can not find]. 
 */
 SIZE_T query_bruteForce_array(const struct array* pArray, const DATA_T* pData_ref, int(*isIdentical_pData)(DATA_T* pData, DATA_T* pData_ref));
 /*
-->Return "size_max" upon failure [can not find]. 
+->Return "capacity" upon failure [can not find]. 
 */
 SIZE_T query_binarySearch_array(const struct array* pArray, const DATA_T* pData_ref, int(*isIdentical_pData)(DATA_T* pData, DATA_T* pData_ref), int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref));
 /*
@@ -118,8 +133,9 @@ Sort O(n^2).
 void sort_insertionSort_array(struct array* pArray, int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref));
 /*
 Sort O(n^2).
+->Return 0 upon failure [offset].
 */
-void sort_quickSort_array(struct array* pArray, SIZE_T offset_start, SIZE_T offset_end,int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref), int(*isLesser_pData)(DATA_T* pData, DATA_T* pData_ref));
+int sort_quickSort_array(struct array* pArray, SIZE_T offset_start, SIZE_T offset_end,int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref), int(*isLesser_pData)(DATA_T* pData, DATA_T* pData_ref));
 /*
 Sort O(nlogn).
 ->Return 0 upon failure [memory].
@@ -139,6 +155,16 @@ void free_array_twin(struct array_twin* pTwin, void(*free_pData)(DATA_T* pData))
 Randomly swap the element. 
 */
 void randomize_array(struct array* pArray);
+/*
+Partitioning with Hoare algorithm. 
+Return "capacity" upon failue [offset]. 
+*/
+SIZE_T partition_hoarePartition_selective_array(struct array* pArray, SIZE_T offset_start, SIZE_T offset_end, SIZE_T offset_pivot, int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref), int(*isLesser_pData)(DATA_T* pData, DATA_T* pData_ref));
+/*
+Partitioning with Hoare algorithm. 
+Return "capacity" upon failue [offset]. 
+*/
+SIZE_T partition_hoarePartition_array(struct array* pArray, SIZE_T offset_pivot, int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref), int(*isLesser_pData)(DATA_T* pData, DATA_T* pData_ref));
 /*
 Display the array at "stderr". 
 Exemple: "message: {1, 2, 3, ..., n}\n". 
