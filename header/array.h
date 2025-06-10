@@ -66,11 +66,16 @@ Insert like stack.
 */
 int insert_array(struct array* pArray, const DATA_T* pData);
 /*
+Replace the destination element.
+->Return 0 upon failure.
+*/
+int replace_array(struct array* pArray, SIZE_T offset, DATA_T* pData, void(*free_pData)(DATA_T* pData));
+/*
 Swap two elements in a array.
 Does nothing if any of the offsets are out of the range of "size".
 ->Return 0 upon failure.
 */
-int swap_array(struct array* pArray, SIZE_T offset_1, SIZE_T offset_2);
+int swap_array(struct array* pArray, const SIZE_T offset_1, const SIZE_T offset_2);
 /*
 Copy to existing array. 
 No worry about overflow & underflow.

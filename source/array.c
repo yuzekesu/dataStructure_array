@@ -108,7 +108,20 @@ int insert_array(struct array* pArray, const DATA_T* pData){
     }
     return isNotFull;
 }
-int swap_array(struct array* pArray, SIZE_T offset_1, SIZE_T offset_2){
+int replace_array(struct array* pArray, SIZE_T offset, DATA_T* pData, void(*free_pData)(DATA_T* pData)){
+    int isValid_offset = 0;
+    if (isValid_offset_array(pArray, offset)){
+        isValid_offset = 1;
+        if (free_pData != NULL){
+            free_pData(get_pData_array(pArray, offset));
+            pArray->ppData[offset] = NULL;
+            
+        }
+        isValid_offset = put_pData_array(pArray, offset, pData);
+    }
+    return isValid_offset;
+}
+int swap_array(struct array* pArray, const SIZE_T offset_1, const SIZE_T offset_2){
     int isValid_offset = 0;
     if (isValid_offset_array(pArray, offset_1) && isValid_offset_array(pArray, offset_2)){
         isValid_offset = 1;
