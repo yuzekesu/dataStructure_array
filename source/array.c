@@ -283,7 +283,10 @@ int merge_priority_array(struct array* pArray_dest, struct array* pArray_1, stru
             while (isSuccess && !isEmpty_array(pArray_1) && !isEmpty_array(pArray_2)){
                 DATA_T* pData_1 = get_pData_array(pArray_1, get_offset_last_array(pArray_1));
                 DATA_T* pData_2 = get_pData_array(pArray_2, get_offset_last_array(pArray_2));
-
+                if (pData_1 == NULL || pData_2 == NULL){
+                    isSuccess = 0;
+                    break;
+                }
                 // put the largest on the right most availabe offset of the array. Then decrease the counter by one. 
 
                 if(isLarger_pData(pData_1, pData_2)){
