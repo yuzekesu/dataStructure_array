@@ -8,15 +8,20 @@
 
 // PRIVATE-----------------------------------------------
 /*
-Copy to existing array. Allow random access, use carefully.
-No worry about overflow. Underflow need to be checked by user.
-Deep_copies will be destroied properly.
-->Return 0 upon failure [memory(deepCopy), overflow].
+Template for copy operation. Force or non-Force.
+The size will be increased if necessary during the operation (not capacity).
 */
-int copy_FORCE_array(struct array* pArray_dest, const struct array* pArray_src, const SIZE_T offset_start_dest, const SIZE_T offset_start_src, const SIZE_T size, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData));
+int copy_TEMPLATE_selective_array(struct array* pArray_dest, const struct array* pArray_src, const SIZE_T offset_start_dest, const SIZE_T offset_start_src, const SIZE_T size, int enable_overwrite, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData));
+// overwriting enabled copy, be careful
+int copy_FORCE_selective_array(struct array* pArray_dest, const struct array* pArray_src, const SIZE_T offset_start_dest, const SIZE_T offset_start_src, const SIZE_T size, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData));
+// overwriting enabled copy, be careful
+int copy_FORCE_array(struct array* pArray_dest, const struct array* pArray_src, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData));
 // PUBLIC-----------------------------------------------
 struct array* initialize_array(SIZE_T capacity){
     struct array* pNewArray = NULL;
+
+    // checking. the size of the new array shall not exceed the the LIMIT of that data type minus one(-1). Becuase of increaments in a FOR loop.
+
     if (capacity < SIZE_CAP){
         pNewArray = malloc(sizeof(struct array));
         if (pNewArray != NULL){
@@ -27,6 +32,9 @@ struct array* initialize_array(SIZE_T capacity){
             else {
                 pNewArray->size = 0;
                 pNewArray->capacity = capacity;
+
+                // initializes the elements with NULL ptr. ease any debugging method. 
+
                 for (SIZE_T i = 0; i < get_capacity_array(pNewArray); i++){
                     pNewArray->ppData[i] = NULL; // dont touch this !!!
                 }
@@ -44,16 +52,16 @@ int isEmpty_array(struct array* pArray){
 }
 int isValid_offset_array(struct array* pArray, SIZE_T offset){
     int isValid = 0;
-    if (offset >= get_size_array(pArray)){
-        ;
-    }
-    else {
+    if (offset < get_size_array(pArray)){
         isValid = 1;
     }
     return isValid;
 }
 int isIdentical_arrays_array(const struct array* pArray_1, const struct array* pArray_2, int(*isIdentical_pData)(DATA_T* pData, DATA_T* pData_ref)){
     int isIdentical = 1;
+
+    // only check if within the "size", not "capacity".
+
     if (get_size_array(pArray_1) == get_size_array(pArray_2)){
         for (SIZE_T i = 0; i < pArray_1->size; i++){
             if (isIdentical_pData(get_pData_array(pArray_1, i), get_pData_array(pArray_2, i))){
@@ -73,7 +81,7 @@ int isIdentical_arrays_array(const struct array* pArray_1, const struct array* p
 DATA_T* get_pData_array(const struct array* pArray, const SIZE_T offset){
     DATA_T* pData = NULL;
     if (isValid_offset_array((struct array*)pArray, offset)){
-        pData = pArray->ppData[offset];
+        pData = pArray->ppData[offset]; // dont change this !!!
     }
     return pData;
 }
@@ -89,6 +97,9 @@ SIZE_T get_offset_last_array(const struct array* pArray){
 int put_pData_array(struct array* pArray, SIZE_T offset, const DATA_T* pData){
     int isValid_offset = 0;
     if (isValid_offset_array(pArray, offset)){
+
+        // good for initialize arrays. then elements are all NULL ptrs. 
+
         if (pArray->ppData[offset] == NULL){
             isValid_offset = 1;
             pArray->ppData[offset] = (DATA_T*)pData;
@@ -97,26 +108,33 @@ int put_pData_array(struct array* pArray, SIZE_T offset, const DATA_T* pData){
     return isValid_offset;
 }
 int insert_array(struct array* pArray, const DATA_T* pData){
-    int isNotFull = 0;
-    if (get_size_array(pArray) == get_capacity_array(pArray)){
-        ;
-    }
-    else {
-        isNotFull = 1;
-        pArray->ppData[get_size_array(pArray)] = (DATA_T*)pData;
+    int isSuccess = 0;
+    if (get_size_array(pArray) < get_capacity_array(pArray)){
+        isSuccess = 1;
+        // pArray->ppData[get_size_array(pArray)] = (DATA_T*)pData;
+        // we have to eliminate possiblities of losing track of pointers.  
         pArray->size++;
+        isSuccess = put_pData_array(pArray, get_size_array(pArray) - 1, pData);
+        if (!isSuccess){
+            pArray->size--;
+        }
     }
-    return isNotFull;
+    return isSuccess;
 }
 int replace_array(struct array* pArray, SIZE_T offset, DATA_T* pData, void(*free_pData)(DATA_T* pData)){
     int isValid_offset = 0;
     if (isValid_offset_array(pArray, offset)){
         isValid_offset = 1;
+
+        // only do the replacement when the function pointer "free_pData" is provided.
+
         if (free_pData != NULL){
             free_pData(get_pData_array(pArray, offset));
-            pArray->ppData[offset] = NULL;
-            
+            pArray->ppData[offset] = NULL;   
         }
+
+        // return 0 (failure), if the destination element is not NULL ptr.  
+
         isValid_offset = put_pData_array(pArray, offset, pData);
     }
     return isValid_offset;
@@ -126,45 +144,86 @@ int swap_array(struct array* pArray, const SIZE_T offset_1, const SIZE_T offset_
     if (isValid_offset_array(pArray, offset_1) && isValid_offset_array(pArray, offset_2)){
         isValid_offset = 1;
         DATA_T* pTempData = get_pData_array(pArray, offset_1);
+
+        // REMINDER: dont capsulate with "replace_array" here, not necessary. 
+
         pArray->ppData[offset_1] = get_pData_array(pArray, offset_2); // dont touch this !!!
         pArray->ppData[offset_2] = pTempData;   // dont touch this !!!
     }
     return isValid_offset;
 }
-int copy_FORCE_array(struct array* pArray_dest, const struct array* pArray_src, const SIZE_T offset_start_dest, const SIZE_T offset_start_src, const SIZE_T size, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData)){
-    int success = 1;
+int copy_TEMPLATE_selective_array(struct array* pArray_dest, const struct array* pArray_src, const SIZE_T offset_start_dest, const SIZE_T offset_start_src, const SIZE_T size, int enable_overwrite, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData)){
+    int isSuccess = 1;
+
+    // checking. the copy area must be within the valid area.
+
     if (get_capacity_array(pArray_dest) < (SIZE_T)offset_start_dest + (SIZE_T)size || get_capacity_array(pArray_src) < (SIZE_T)offset_start_src + (SIZE_T)size){
-        success = 0;
+        isSuccess = 0;
     }
     else {
+
+        // !!! if updating "size" is needed for the destination array. since the destination array could be a empty array at first place. 
+
         if (get_size_array(pArray_dest) < (SIZE_T)offset_start_dest + (SIZE_T)size){
             pArray_dest->size = (SIZE_T)offset_start_dest + (SIZE_T)size;
         }
-        if (duplicate_deepCopy_pData == NULL){
-            for (SIZE_T i = (SIZE_T)offset_start_dest, u = (SIZE_T)offset_start_src; i < (SIZE_T)size + (SIZE_T)offset_start_dest; i++, u++){
-                pArray_dest->ppData[i] = get_pData_array(pArray_src, u);
+
+        // starts copy here
+
+        for (SIZE_T i = (SIZE_T)offset_start_dest, u = (SIZE_T)offset_start_src; i < (SIZE_T)size + (SIZE_T)offset_start_dest; i++, u++){
+            DATA_T* pData_copy = get_pData_array(pArray_src, u);
+
+            // deep copy or not
+
+            if (duplicate_deepCopy_pData == NULL){
+                pData_copy = get_pData_array(pArray_src, u);
             }
-        }
-        else {
-            for (SIZE_T i = (SIZE_T)offset_start_dest, u = (SIZE_T)offset_start_src; i < (SIZE_T)size + (SIZE_T)offset_start_dest; i++, u++){
-                pArray_dest->ppData[i] = duplicate_deepCopy_pData(get_pData_array(pArray_src, u));
-                if (pArray_dest->ppData[i] == NULL){
-                    for (; i >= 0; i--){
-                        free_pData(get_pData_array(pArray_dest, i)); 
+            else {
+                pData_copy = duplicate_deepCopy_pData(get_pData_array(pArray_src, u));
+            }
+
+            // !!! the copied element cannot be NULL what so ever.
+
+            if (pData_copy != NULL){
+                    if (enable_overwrite){
+                        pArray_dest->ppData[i] = pData_copy;
                     }
-                    success = 0;
+                    else {
+                        isSuccess = put_pData_array(pArray_dest, i, pData_copy);
+                        if (!isSuccess){
+                            break;
+                        }
+                    } 
+                }
+                else {
+                    isSuccess = 0;
+                    if (free_pData != NULL){
+                        for (SIZE_T k = 0; k < i; k++){
+                            // destroy all created new pDatas if any deep copy failed. 
+                            free_pData(get_pData_array(pArray_dest, k)); 
+                            pArray_dest->ppData[k] = NULL;  
+                        }
+                    }
                     break;
                 }
-            }
         }
     }
+    return isSuccess;
+}
+int copy_selective_array(struct array* pArray_dest, const struct array* pArray_src, const SIZE_T offset_start_dest, const SIZE_T offset_start_src, const SIZE_T size, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData)){
+    return copy_TEMPLATE_selective_array(pArray_dest, pArray_src, offset_start_dest, offset_start_src, size, 0, duplicate_deepCopy_pData, free_pData);
+}
+int copy_array(struct array* pArray_dest, const struct array* pArray_src, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData)){
+    return copy_selective_array(pArray_dest, pArray_src, 0, 0,get_size_array(pArray_dest), duplicate_deepCopy_pData, free_pData);
+}
+int copy_FORCE_selective_array(struct array* pArray_dest, const struct array* pArray_src, const SIZE_T offset_start_dest, const SIZE_T offset_start_src, const SIZE_T size, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData)){
+    return copy_TEMPLATE_selective_array(pArray_dest, pArray_src, offset_start_dest, offset_start_src, size, 1, duplicate_deepCopy_pData, free_pData);
+}
+int copy_FORCE_array(struct array* pArray_dest, const struct array* pArray_src, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData)){
+    int success = copy_FORCE_selective_array(pArray_dest, pArray_src, 0, 0, get_size_array(pArray_src), duplicate_deepCopy_pData, free_pData);
     return success;
 }
-int copy_array(struct array* pArray_dest, const struct array* pArray_src, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData)){
-    int success = copy_FORCE_array(pArray_dest, pArray_src, 0, 0, get_size_array(pArray_src), duplicate_deepCopy_pData, free_pData);
-    return success;
-}
-struct array* duplicate_selective_array(const struct array* pArray, SIZE_T offset_start, SIZE_T offset_end, int doInherit_capacity, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData)){
+struct array* duplicate_selective_array(const struct array* pArray, SIZE_T offset_start, SIZE_T offset_end, int doInherit_capacity, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData)){
     SIZE_T size_toCopy = offset_end - offset_start + 1;
     if (doInherit_capacity){
         size_toCopy = get_capacity_array(pArray);
@@ -172,58 +231,95 @@ struct array* duplicate_selective_array(const struct array* pArray, SIZE_T offse
     struct array* pNewArray = initialize_array(size_toCopy);
     if (pNewArray != NULL){
         pNewArray->size = size_toCopy;
-        copy_FORCE_array(pNewArray, pArray, 0, offset_start, size_toCopy, duplicate_deepCopy_pData, free_pData);
+        int isSuccess = copy_selective_array(pNewArray, pArray, 0, offset_start, size_toCopy, duplicate_deepCopy_pData, free_pData);
+        if (!isSuccess){
+
+            // here, the argument has function pointer to be NULL. because the "copy_FORCE_selective_array" above wont create any new pDatas if any of those falied to be deep copied.
+            
+            free_array(pNewArray, NULL);
+        }
     }
     return pNewArray;
 
 }
-struct array* duplicate_identical_array(const struct array* pArray, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData)){
+struct array* duplicate_identical_array(const struct array* pArray, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData)){
     struct array* pNewArray = duplicate_selective_array(pArray, 0, get_offset_last_array(pArray), 1, duplicate_deepCopy_pData, free_pData);
     return pNewArray;
 }
-struct array* merge_array(struct array* pArray_dest, struct array* pArray_1, struct array* pArray_2){
+int merge_array(struct array* pArray_dest, struct array* pArray_1, struct array* pArray_2){
+    int isSuccess = 0;
     if (pArray_dest != NULL){
-        copy_FORCE_array(pArray_dest, pArray_1, 0, 0, get_size_array(pArray_1), NULL, NULL);
-        copy_FORCE_array(pArray_dest, pArray_2, get_size_array(pArray_1), 0, get_size_array(pArray_2), NULL, NULL);
-    }
-    return pArray_dest;
-}
-struct array* merge_FIFO_array(struct array* pArray_dest, struct array* pArray_1, struct array* pArray_2, int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref)){
-    if (pArray_dest == NULL){
-        SIZE_T newcapacity = get_capacity_array(pArray_1) + get_capacity_array(pArray_2);
-        SIZE_T newsize = get_size_array(pArray_1) + get_size_array(pArray_2);
-        pArray_dest = initialize_array(newcapacity);
-        if (pArray_dest != NULL){
-            pArray_dest->size = newsize;
-            pArray_dest->capacity = newcapacity;
+
+        // need to make sure the size is enough for both of the source arrays.
+
+        SIZE_T size_merged = get_size_array(pArray_1) + get_size_array(pArray_2);
+        if (get_capacity_array(pArray_dest) <= size_merged){
+            isSuccess = copy_selective_array(pArray_dest, pArray_1, 0, 0, get_size_array(pArray_1), NULL, NULL);
+            if (isSuccess){
+                isSuccess = copy_selective_array(pArray_dest, pArray_2, get_size_array(pArray_1), 0, get_size_array(pArray_2), NULL, NULL);
+            }
         }
     }
-    if (pArray_dest != NULL){
-        SIZE_T offset_mergeProgress = get_offset_last_array(pArray_dest);
-        while (!isEmpty_array(pArray_1) && !isEmpty_array(pArray_2)){
-            DATA_T* pData_1 = get_pData_array(pArray_1, get_offset_last_array(pArray_1));
-            DATA_T* pData_2 = get_pData_array(pArray_2, get_offset_last_array(pArray_2));
-            if(isLarger_pData(pData_1, pData_2)){
-                pArray_dest->ppData[offset_mergeProgress] = pData_1;
-                pArray_1->size--;
-            }
-            else {
-                pArray_dest->ppData[offset_mergeProgress] = pData_2;
-                pArray_2->size--;
-            }
-            offset_mergeProgress--;
-        }
-        copy_array(pArray_dest, pArray_1, NULL, NULL);
-        copy_array(pArray_dest, pArray_2, NULL, NULL);
-    }
-    return pArray_dest;
+    return isSuccess;
 }
-struct array_twin* split_array(struct array* pArray, int isDestroyParent){
+int merge_priority_array(struct array* pArray_dest, struct array* pArray_1, struct array* pArray_2, int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref)){
+    int isSuccess = 0;
+    if (pArray_dest != NULL){
+
+        // need to make sure the size is enough for both of the source arrays.
+
+        SIZE_T size_merged = get_size_array(pArray_1) + get_size_array(pArray_2);
+        if (get_capacity_array(pArray_dest) <= size_merged){
+
+            // check manuelly if the size need to be changed or not. because we are not using "copy" functions here to copy. This will never fail.
+
+            if (get_size_array(pArray_dest) < size_merged){
+                pArray_dest->size = size_merged;
+            }
+
+            // the special merging starts here. begin with the last offset. 
+
+            SIZE_T offset_mergeProgress = get_offset_last_array(pArray_dest);
+            while (isSuccess && !isEmpty_array(pArray_1) && !isEmpty_array(pArray_2)){
+                DATA_T* pData_1 = get_pData_array(pArray_1, get_offset_last_array(pArray_1));
+                DATA_T* pData_2 = get_pData_array(pArray_2, get_offset_last_array(pArray_2));
+
+                // put the largest on the right most availabe offset of the array. Then decrease the counter by one. 
+
+                if(isLarger_pData(pData_1, pData_2)){
+                    isSuccess = put_pData_array(pArray_dest, offset_mergeProgress, pData_1);
+                    pArray_1->size--;
+                }
+                else {
+                    isSuccess = put_pData_array(pArray_dest, offset_mergeProgress, pData_2);
+                    pArray_2->size--;
+                }
+                offset_mergeProgress--;
+            }
+
+            // copy the rest to the destination array. 
+
+            if (isSuccess){
+                isSuccess = copy_array(pArray_dest, pArray_1, NULL, NULL);
+                if (isSuccess){
+                    isSuccess = copy_array(pArray_dest, pArray_2, NULL, NULL);
+            
+                }
+            }
+        }
+        
+    }
+    return isSuccess;
+}
+struct array_twin* split_array(struct array* pArray){
     SIZE_T different_offset = get_size_array(pArray);
     SIZE_T offset_1_start = 0;
     SIZE_T offset_1_end = different_offset / 2 - 1;
     SIZE_T offset_2_start = different_offset / 2;
     SIZE_T offset_2_end = get_offset_last_array(pArray);
+
+    // nothing special. split a array to two at the middle. 
+
     struct array* pArray_1 = duplicate_selective_array(pArray, offset_1_start, offset_1_end, 0, NULL, NULL);
     struct array* pArray_2 = duplicate_selective_array(pArray, offset_2_start, offset_2_end, 0, NULL, NULL);
     struct array_twin* pTwin = NULL;
@@ -235,9 +331,6 @@ struct array_twin* split_array(struct array* pArray, int isDestroyParent){
         pTwin = malloc(sizeof(struct array_twin));
         pTwin->pArray_1 = pArray_1;
         pTwin->pArray_2 = pArray_2;
-    }
-    if (isDestroyParent){
-        free_array(pArray, NULL);
     }
     return pTwin;
 }
@@ -328,7 +421,7 @@ int sort_quickSort_array(struct array* pArray, SIZE_T offset_start, SIZE_T offse
 int sort_mergeSort_array(struct array* pArray, int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref)){
     int isSuccess = 1;
     if (get_size_array(pArray) > 1){
-        struct array_twin* pTwin = split_array(pArray, 0);
+        struct array_twin* pTwin = split_array(pArray);
         struct array* pArray_1 = NULL;
         struct array* pArray_2 = NULL;
         if (pTwin == NULL){
@@ -342,7 +435,10 @@ int sort_mergeSort_array(struct array* pArray, int(*isLarger_pData)(DATA_T* pDat
             if (isSuccess){
                 isSuccess = sort_mergeSort_array(pArray_2, isLarger_pData);
                    if (isSuccess){
-                    merge_FIFO_array(pArray, pArray_1, pArray_2, isLarger_pData);
+                    struct array* pArray_merged = initialize_array(get_capacity_array(pArray));
+                    merge_priority_array(pArray_merged, pArray_1, pArray_2, isLarger_pData);
+                    copy_FORCE_array(pArray, pArray_merged, NULL, NULL);
+                    free_array(pArray_merged, NULL);
                    } 
                    else {
                     isSuccess = 0;

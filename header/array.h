@@ -1,3 +1,4 @@
+// please avoid modifing a array directly. use instead functions for avoiding memory leaks, overflows, underflows and mistakes.
 #ifndef ARRAY_TEMPLATE_H
 #define ARRAY_TEMPLATE_H
 #define DATA_T void 
@@ -53,65 +54,79 @@ Does nothing if the offset is out of the range of "size".
 */
 SIZE_T get_offset_last_array(const struct array* pArray);
 /*
-Put the elements in the array. 
-Does nothing if the offset is out of the range of "size".
-Does nothing if the destination is already assigned with other value then "NULL".
+Put the elements in the array, no overwriting.
 Please use "insert_array" for insert new element into the array. 
 ->Return 0 upon failure [offset, overwrite].
 */
 int put_pData_array(struct array* pArray, SIZE_T offset, const DATA_T* pData);
 /*
-Insert like stack.
-->Return 0 upon failure.
+Insert like stack, no overwriting.
+->Return 0 upon failure [capacity].
 */
 int insert_array(struct array* pArray, const DATA_T* pData);
 /*
 Replace the destination element.
-->Return 0 upon failure.
+The previous elemtent in that offset will be destroyed, or the replacement will not happen in the first place.
+->Return 0 upon failure [would loss track of pointer].
 */
 int replace_array(struct array* pArray, SIZE_T offset, DATA_T* pData, void(*free_pData)(DATA_T* pData));
 /*
 Swap two elements in a array.
 Does nothing if any of the offsets are out of the range of "size".
-->Return 0 upon failure.
+->Return 0 upon failure [offset].
 */
 int swap_array(struct array* pArray, const SIZE_T offset_1, const SIZE_T offset_2);
 /*
-Copy to existing array. 
-No worry about overflow & underflow.
-Deep_copies will be destroied properly.
-->Return 0 upon failure [memory(deepCopy), overflow].
+Copy safely, no overwriting.
+NULL elements will cause the program to terminate immediatly and reset the hole "pArray_dest" with "free_pData".
+Deep_copies will be destroied properly if Malloc failed.
+The size will be increased if necessary during the operation (not capacity).
+->Return 0 upon failure [deepCopy(memory), offset, capacity, NULL src element].
 */
-int copy_array(struct array* pArray_dest, const struct array* pArray_src, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData));
+int copy_selective_array(struct array* pArray_dest, const struct array* pArray_src, const SIZE_T offset_start_dest, const SIZE_T offset_start_src, const SIZE_T size, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData));
+/*
+Copy safely, no overwriting.
+NULL elements will cause the program to terminate immediatly and reset the hole "pArray_dest" with "free_pData".
+Deep_copies will be destroied properly if Malloc failed.
+The size will be increased if necessary during the operation (not capacity).
+->Return 0 upon failure [deepCopy(memory), offset, capacity, NULL src element].
+*/
+int copy_array(struct array* pArray_dest, const struct array* pArray_src, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData));
 /*
 Malloc and Duplicate "partial" of a existing array.
+NULL elements will cause the program to terminate immediatly and reset the hole "pArray_dest" with "free_pData".
 Deep_copies will be destroied properly if Malloc failed.
-->Return NULL upon failure [memory].
+The size will be increased if necessary during the operation (not capacity).
+->Return NULL upon failure [deepCopy(memory), offset, capacity, NULL src element].
 */
-struct array* duplicate_selective_array(const struct array* pArray, SIZE_T offset_start, SIZE_T offset_end, int doInherit_capacity, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData));
+struct array* duplicate_selective_array(const struct array* pArray, SIZE_T offset_start, SIZE_T offset_end, int doInherit_capacity, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData));
 /*
 Malloc and Duplicate a existing array.
+NULL elements will cause the program to terminate immediatly and reset the hole "pArray_dest" with "free_pData".
 Deep_copies will be destroied properly if Malloc failed.
-->Return NULL upon failure [memory].
+The size will be increased if necessary during the operation (not capacity).
+->Return NULL upon failure [deepCopy(memory), offset, capacity, NULL src element].
 */
-struct array* duplicate_identical_array(const struct array* pArray, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void*(*free_pData)(DATA_T* pData));
+struct array* duplicate_identical_array(const struct array* pArray, DATA_T*(*duplicate_deepCopy_pData)(DATA_T* pData), void(*free_pData)(DATA_T* pData));
 /*
 Merge two arrays.
-Malloc if pArray_dest == NULL.
-->Return NULL upon failure [memory].
+NULL elements will cause the program to terminate immediatly and reset the hole "pArray_dest" with "free_pData".
+Deep_copies will be destroied properly if Malloc failed.
+The size will be increased if necessary during the operation (not capacity).
+->Return NULL upon failure [deepCopy(memory), offset, capacity, NULL src element].
 */
-struct array* merge_array(struct array* pArray_dest, struct array* pArray_1, struct array* pArray_2);
+int merge_array(struct array* pArray_dest, struct array* pArray_1, struct array* pArray_2);
 /*
-Merge two arrays, FIFO applies based on pData and offset.
-Malloc if pArray_dest == NULL.
-->Return NULL upon failure [memory].
+Merge two arrays, pritority applies based on pData and offset.
+The size will be increased if necessary during the operation (not capacity).
+->Return NULL upon failure [deepCopy(memory), offset, capacity, NULL src element].
 */
-struct array* merge_FIFO_array(struct array* pArray_dest, struct array* pArray_1, struct array* pArray_2, int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref));
+int merge_priority_array(struct array* pArray_dest, struct array* pArray_1, struct array* pArray_2, int(*isLarger_pData)(DATA_T* pData, DATA_T* pData_ref));
 /*
 Malloc a pointer.
 ->Return NULL uppon failure [memory], nothing happens.
 */
-struct array_twin* split_array(struct array* pArray, int isDestroyParent);
+struct array_twin* split_array(struct array* pArray);
 /*
 ->Return "capacity" upon failure [can not find]. 
 */
