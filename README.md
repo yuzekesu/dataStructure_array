@@ -1,4 +1,4 @@
-# Template for the data structure array\
+# Template for the data structure array
 > [!NOTE]
 >**PURPOSE:**\
 >   To experience the frustration of making wheels.\
