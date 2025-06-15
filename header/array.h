@@ -39,17 +39,14 @@ Does nothing if the offset is out of the range of "size".
 */
 DATA_T* get_pData_array(const struct array* pArray, const SIZE_T offset);
 /*
-Does nothing if the offset is out of the range of "size".
 ->Return the current size of the array.
 */
 SIZE_T get_size_array(const struct array* pArray);
 /*
-Does nothing if the offset is out of the range of "size".
 ->Return the maximum capacity of the array.
 */
 SIZE_T get_capacity_array(const struct array* pArray);
 /*
-Does nothing if the offset is out of the range of "size".
 ->Return the offset of the last element in the array.
 */
 SIZE_T get_offset_last_array(const struct array* pArray);
